@@ -1,18 +1,18 @@
                                 ****************
                                       DPPY
                                 ****************
-=========
+========
 1. What?
-=========
+========
 
 DPPy proof-of-concept backend for NUMBA to support compilation for Intel CPU and
 GPU architectures. The present implementation of DPPy is based on OpenCL 2.1,
 but is likely to change in the future to rely on Sycl/DPC++ or Intel Level-0
 driver API.
 
-================
+===============
 2. Prequisites?
-================
+===============
 
 Bash                 : In the system and not as default Shell
 Tar                  : To extract files
@@ -50,14 +50,13 @@ Others               : All existing dependecies for NUMBA, such as llvmlite,
 ==================
 3. How to install?
 ==================
+1.
+Make sure the dependencies of NUMBA-DPPY are installed in the system, for convenience
+and to make sure the dependencies are installed with consistent version of LLVM we provide
+installation script that will create a CONDA environment and install LLVM-SPIRV translator,
+SPIRV-Tools and llvmlite in that environment. **To use this CONDA has to be available in the system**.
 
-Extract the archive:
-
-    tar -zxvf NUMBA-PVC-offline.tar.gz
-
-Run the installer script:
-
-    ./build_numba_dppy.sh --prefix $PATH_TO_INSTALL_NUMBA-DPPY
+You can find the above mentioned installation script `here <https://github.intel.com/SAT/numba-pvc-build-scripts>`_. Please follow the README to run the installation script. 
 
 After successful installation the following message should be displayed:
 
@@ -71,8 +70,16 @@ After successful installation the following message should be displayed:
     #    $ conda deactivate
 
 The installer script creates a new conda environment called numba-dppy-env with
-all the needed dependencies already installed. To use the DPPy backend, please
-activate the numba-dppy-env
+all the needed dependencies already installed. **Please activate the numba-dppy-env before proceeding**.
+
+
+2.
+NUMBA-DPPY also depend on DPPY backend. It can be found `here <https://github.intel.com/SAT/dppy>`_. Please run 
+`build_for_conda.sh` to install DPPY backend.
+
+3.
+After all the dependencies are installed please run `build_for_develop.sh` to get a local installation of NUMBA-DPPY. **Both step 2 and 3 assumes CONDA environment with
+the dependencies onf NUMBA-DPPY installed in it was activated**.
 
 ================
 4. Running tests
@@ -81,8 +88,7 @@ activate the numba-dppy-env
 To make sure the installation was successful, try running the examples and the
 test suite:
 
-    $PATH_TO_INSTALL_NUMBA-DPPY/numba/dppy/examples/
-    $PATH_TO_INSTALL_NUMBA-DPPY/numba/dppy/tests/dppy/
+    $PATH_TO_NUMBA-DPPY/numba/dppy/examples/
 
 To run the test suite execute the following:
 
@@ -101,5 +107,3 @@ examples, supported functionalities, and known issues.
 ===================
 
 Please email diptorup.deb@intel.com to report issues and bugs.
-
-
