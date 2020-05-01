@@ -213,29 +213,20 @@ def to_scalar_from_0d(x):
             return x.dtype
     return x
 
-
-def find_setitems_block(setitems, itemsset, block, typemap):
+def find_setitems_block(setitems, block, typemap):
     for inst in block.body:
         if isinstance(inst, ir.StaticSetItem) or isinstance(inst, ir.SetItem):
             setitems.add(inst.target.name)
-            # If we store a non-mutable object into an array then that is safe to hoist.
-            # If the stored object is mutable and you hoist then multiple entries in the
-            # outer array could reference the same object and changing one index would then
-            # change other indices.
-            if getattr(typemap[inst.value.name], "mutable", False):
-                itemsset.add(inst.value.name)
         elif isinstance(inst, parfor.Parfor):
-            find_setitems_block(setitems, itemsset, inst.init_block, typemap)
-            find_setitems_body(setitems, itemsset, inst.loop_body, typemap)
+            find_setitems_block(setitems, inst.init_block, typemap)
+            find_setitems_body(setitems, inst.loop_body, typemap)
 
-def find_setitems_body(setitems, itemsset, loop_body, typemap):
+def find_setitems_body(setitems, loop_body, typemap):
     """
-      Find the arrays that are written into (goes into setitems) and the
-      mutable objects (mostly arrays) that are written into other arrays
-      (goes into itemsset).
+      Find the arrays that are written into (goes into setitems)
     """
     for label, block in loop_body.items():
-        find_setitems_block(setitems, itemsset, block, typemap)
+        find_setitems_block(setitems, block, typemap)
 
 def _create_gufunc_for_regular_parfor():
     #TODO
@@ -523,8 +514,7 @@ def _create_gufunc_for_parfor_body(
     #hoisted, not_hoisted = hoist(parfor_params, loop_body,
     #                             typemap, wrapped_blocks)
     setitems = set()
-    itemsset = set()
-    find_setitems_body(setitems, itemsset, loop_body, typemap)
+    find_setitems_body(setitems, loop_body, typemap)
 
     hoisted = []
     not_hoisted = []
