@@ -55,6 +55,11 @@ class TestDPPYFunc(DPPYTestCase):
             i = dppy.get_global_id(0)
             b[i] = g(a[i])
 
+        @dppy.kernel
+        def h(a, b):
+            i = dppy.get_global_id(0)
+            b[i] = g(a[i]) + 1
+
         a = np.ones(self.N)
         b = np.ones(self.N)
 
@@ -62,6 +67,9 @@ class TestDPPYFunc(DPPYTestCase):
 
         self.assertTrue(np.all(b == 2))
 
+        h[self.device_env, self.N](a, b)
+
+        self.assertTrue(np.all(b == 3))
 
 if __name__ == '__main__':
     unittest.main()
