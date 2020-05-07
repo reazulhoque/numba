@@ -1,7 +1,7 @@
 from __future__ import print_function, absolute_import, division
 from numba import sigutils, types
-from .compiler import (compile_kernel, JitDPPyKernel, compile_dppy_func_template, compile_dppy_func)
-from inspect import signature
+from .compiler import (compile_kernel, JitDPPyKernel, compile_dppy_func_template,
+                       compile_dppy_func, get_ordered_arg_access_types)
 
 
 def kernel(signature=None, access_types=None, debug=False):
@@ -21,17 +21,7 @@ def kernel(signature=None, access_types=None, debug=False):
 
 def autojit(debug=False, access_types=None):
     def _kernel_autojit(pyfunc):
-        # Construct a list of access type of each arg according to their position
-        ordered_arg_access_types = []
-        sig = signature(pyfunc, follow_wrapped=False)
-        for idx, arg_name in enumerate(sig.parameters):
-            if access_types:
-                for key in access_types:
-                    if arg_name in access_types[key]:
-                        ordered_arg_access_types.append(key)
-            if len(ordered_arg_access_types) <= idx:
-                ordered_arg_access_types.append(None)
-
+        ordered_arg_access_types = get_ordered_arg_access_types(pyfunc, access_types)
         return JitDPPyKernel(pyfunc, ordered_arg_access_types)
     return _kernel_autojit
 
@@ -43,7 +33,8 @@ def _kernel_jit(signature, debug, access_types):
         raise TypeError(msg.format(restype=restype))
 
     def _wrapped(pyfunc):
-        return compile_kernel(pyfunc, argtypes, debug, access_types)
+        ordered_arg_access_types = get_ordered_arg_access_types(pyfunc, access_types)
+        return compile_kernel(None, pyfunc, argtypes, ordered_arg_access_types, debug)
 
     return _wrapped
 

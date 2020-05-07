@@ -8,6 +8,7 @@ from numba import types, compiler, ir
 from numba.typing.templates import AbstractTemplate
 from numba import ctypes_support as ctypes
 from types import FunctionType
+from inspect import signature
 
 import dppy.core as driver
 from . import spirv_generator
@@ -30,6 +31,21 @@ def _raise_invalid_kernel_enqueue_args():
                      "Usage: device_env, global size, local size. "
                      "The local size argument is optional.")
     raise ValueError(error_message)
+
+
+def get_ordered_arg_access_types(pyfunc, access_types):
+    # Construct a list of access type of each arg according to their position
+    ordered_arg_access_types = []
+    sig = signature(pyfunc, follow_wrapped=False)
+    for idx, arg_name in enumerate(sig.parameters):
+        if access_types:
+            for key in access_types:
+                if arg_name in access_types[key]:
+                    ordered_arg_access_types.append(key)
+        if len(ordered_arg_access_types) <= idx:
+            ordered_arg_access_types.append(None)
+
+    return ordered_arg_access_types
 
 class DPPyCompiler(CompilerBase):
     """ DPPy Compiler """
@@ -63,6 +79,7 @@ def compile_with_dppy(pyfunc, return_type, args, debug):
     flags.set('no_compile')
     flags.set('no_cpython_wrapper')
     #flags.set('nrt')
+
     # Run compilation pipeline
     if isinstance(pyfunc, FunctionType):
         cres = compiler.compile_extra(typingctx=typingctx,
@@ -95,6 +112,9 @@ def compile_with_dppy(pyfunc, return_type, args, debug):
 def compile_kernel(device, pyfunc, args, access_types, debug=False):
     if DEBUG:
         print("compile_kernel", args)
+    if not device:
+        device = driver.runtime.get_gpu_device()
+
     cres = compile_with_dppy(pyfunc, None, args, debug=debug)
     func = cres.library.get_function(cres.fndesc.llvm_func_name)
     kernel = cres.target_context.prepare_ocl_kernel(func, cres.signature.args)

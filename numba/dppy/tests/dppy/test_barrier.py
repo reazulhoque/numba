@@ -11,8 +11,7 @@ class TestBarrier(unittest.TestCase):
     device_env = ocldrv.runtime.get_gpu_device()
 
     def test_proper_lowering(self):
-        #@dppy.kernel("void(float32[::1])")
-        @dppy.kernel
+        @dppy.kernel("void(float32[::1])")
         def twice(A):
             i = dppy.get_global_id(0)
             d = A[i]
@@ -29,8 +28,7 @@ class TestBarrier(unittest.TestCase):
         np.testing.assert_allclose(orig * 2, arr)
 
     def test_no_arg_barrier_support(self):
-        #@dppy.kernel("void(float32[::1])")
-        @dppy.kernel
+        @dppy.kernel("void(float32[::1])")
         def twice(A):
             i = dppy.get_global_id(0)
             d = A[i]
@@ -51,8 +49,7 @@ class TestBarrier(unittest.TestCase):
     def test_local_memory(self):
         blocksize = 10
 
-        #@dppy.kernel("void(float32[::1])")
-        @dppy.kernel
+        @dppy.kernel("void(float32[::1])")
         def reverse_array(A):
             sm = dppy.local.alloc(shape=blocksize, dtype=float32)
             i = dppy.get_global_id(0)
