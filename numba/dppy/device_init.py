@@ -11,9 +11,11 @@ from .ocl.stubs import (
     get_num_groups,
     barrier,
     mem_fence,
-#    shared,
     sub_group_barrier,
     atomic,
+    local,
+    CLK_LOCAL_MEM_FENCE,
+    CLK_GLOBAL_MEM_FENCE,
 )
 
 from . import initialize

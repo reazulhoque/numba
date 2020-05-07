@@ -16,7 +16,7 @@ def kernel(signature=None, access_types=None, debug=False):
         func = signature
         return autojit(debug=False, access_types=access_types)(func)
     else:
-        return _kernel_jit(signature, debug)
+        return _kernel_jit(signature, debug, access_types)
 
 
 def autojit(debug=False, access_types=None):
@@ -36,14 +36,14 @@ def autojit(debug=False, access_types=None):
     return _kernel_autojit
 
 
-def _kernel_jit(signature, debug):
+def _kernel_jit(signature, debug, access_types):
     argtypes, restype = sigutils.normalize_signature(signature)
     if restype is not None and restype != types.void:
         msg = ("DPPy kernel must have void return type but got {restype}")
         raise TypeError(msg.format(restype=restype))
 
     def _wrapped(pyfunc):
-        return compile_kernel(pyfunc, argtypes, debug)
+        return compile_kernel(pyfunc, argtypes, debug, access_types)
 
     return _wrapped
 
