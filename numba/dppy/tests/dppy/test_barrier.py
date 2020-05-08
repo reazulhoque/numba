@@ -33,7 +33,6 @@ class TestBarrier(unittest.TestCase):
             i = dppy.get_global_id(0)
             d = A[i]
             # no argument defaults to global mem fence
-            # which is the same for local in dppy
             dppy.barrier()
             A[i] = d * 2
 
@@ -51,15 +50,15 @@ class TestBarrier(unittest.TestCase):
 
         @dppy.kernel("void(float32[::1])")
         def reverse_array(A):
-            sm = dppy.local.alloc(shape=blocksize, dtype=float32)
+            lm = dppy.local.alloc(shape=blocksize, dtype=float32)
             i = dppy.get_global_id(0)
 
             # preload
-            sm[i] = A[i]
-            # barrier
+            lm[i] = A[i]
+            # barrier local or global will both work as we only have one work group
             dppy.barrier(dppy.CLK_LOCAL_MEM_FENCE)  # local mem fence
             # write
-            A[i] += sm[blocksize - 1 - i]
+            A[i] += lm[blocksize - 1 - i]
 
         arr = np.arange(blocksize).astype(np.float32)
         orig = arr.copy()
