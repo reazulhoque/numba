@@ -11,7 +11,7 @@ import dppy.core as ocldrv
 
 def atomic_add(ary):
     tid = dppy.get_local_id(0)
-    lm = dppy.local.alloc(32, numba.uint32)
+    lm = dppy.local.static_alloc(32, numba.uint32)
     lm[tid] = 0
     dppy.barrier(dppy.CLK_GLOBAL_MEM_FENCE)
     bin = ary[tid] % 32
@@ -23,7 +23,7 @@ def atomic_add(ary):
 def atomic_add2(ary):
     tx = dppy.get_local_id(0)
     ty = dppy.get_local_id(1)
-    lm = dppy.local.alloc((4, 8), numba.uint32)
+    lm = dppy.local.static_alloc((4, 8), numba.uint32)
     lm[tx, ty] = ary[tx, ty]
     dppy.barrier(dppy.CLK_GLOBAL_MEM_FENCE)
     dppy.atomic.add(lm, (tx, ty), 1)
@@ -34,7 +34,7 @@ def atomic_add2(ary):
 def atomic_add3(ary):
     tx = dppy.get_local_id(0)
     ty = dppy.get_local_id(1)
-    lm = dppy.local.alloc((4, 8), numba.uint32)
+    lm = dppy.local.static_alloc((4, 8), numba.uint32)
     lm[tx, ty] = ary[tx, ty]
     dppy.barrier(dppy.CLK_GLOBAL_MEM_FENCE)
     dppy.atomic.add(lm, (tx, numba.uint64(ty)), 1)

@@ -118,14 +118,14 @@ class OclAtomicTemplate(AttributeTemplate):
 # dppy.local submodule -------------------------------------------------------
 
 class Ocl_local_alloc(MacroTemplate):
-    key = dppy.local.alloc
+    key = dppy.local.static_alloc
 
 
 @intrinsic_attr
 class OclLocalTemplate(AttributeTemplate):
     key = types.Module(dppy.local)
 
-    def resolve_alloc(self, mod):
+    def resolve_static_alloc(self, mod):
         return types.Macro(Ocl_local_alloc)
 
 

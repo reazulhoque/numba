@@ -18,7 +18,7 @@ def recursive_reduction(size, group_size,
         group_size = dppy.get_local_size(0)
         group_id   = dppy.get_group_id(0)
 
-        local_sums = dppy.local.alloc(shape=work_group_size, dtype=int32)
+        local_sums = dppy.local.static_alloc(64, int32)
 
         local_sums[local_id] = 0
 

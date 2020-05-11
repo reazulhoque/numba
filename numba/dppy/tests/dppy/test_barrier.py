@@ -50,7 +50,7 @@ class TestBarrier(unittest.TestCase):
 
         @dppy.kernel("void(float32[::1])")
         def reverse_array(A):
-            lm = dppy.local.alloc(shape=blocksize, dtype=float32)
+            lm = dppy.local.static_alloc(shape=10, dtype=float32)
             i = dppy.get_global_id(0)
 
             # preload

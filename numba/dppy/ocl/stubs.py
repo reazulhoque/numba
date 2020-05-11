@@ -108,7 +108,7 @@ class local(Stub):
     """
     _description_ = '<local>'
 
-    alloc = macro.Macro('local.alloc', local_alloc, callable=True,
+    static_alloc = macro.Macro('local.static_alloc', local_alloc, callable=True,
                         argnames=['shape', 'dtype'])
 
 
