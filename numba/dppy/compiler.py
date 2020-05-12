@@ -113,7 +113,7 @@ def compile_kernel(device, pyfunc, args, access_types, debug=False):
     if DEBUG:
         print("compile_kernel", args)
     if not device:
-        device = driver.runtime.get_gpu_device()
+        device = driver.runtime.get_current_device()
 
     cres = compile_with_dppy(pyfunc, None, args, debug=debug)
     func = cres.library.get_function(cres.fndesc.llvm_func_name)
@@ -533,7 +533,7 @@ class JitDPPyKernel(DPPyKernelBase):
         assert not kwargs, "Keyword Arguments are not supported"
         if self.device_env is None:
             try:
-                self.device_env = driver.runtime.get_gpu_device()
+                self.device_env = driver.runtime.get_current_device()
             except:
                 _raise_no_device_found_error()
 
