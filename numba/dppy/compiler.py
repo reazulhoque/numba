@@ -261,7 +261,8 @@ def _ensure_valid_work_group_size(val, work_item_grid):
         val = [val]
 
     if len(val) != len(work_item_grid):
-        error_message = ("Unsupported number of work item dimensions ")
+        error_message = ("Unsupported number of work item dimensions, " +
+                         "dimensions of global and local work items has to be the same ")
         raise ValueError(error_message)
 
     return list(val)
@@ -303,19 +304,19 @@ class DPPyKernelBase(object):
     def __getitem__(self, args):
         """Mimick CUDA python's square-bracket notation for configuration.
         This assumes the argument to be:
-            `device_env, global size, local size`
+            `global size, local size`
         """
         ls = None
         nargs = len(args)
         # Check if the kernel enquing arguments are sane
-        if nargs < 2 or nargs > 3:
+        if nargs < 1 or nargs > 2:
             _raise_invalid_kernel_enqueue_args
 
-        device_env = args[0]
-        gs = _ensure_valid_work_item_grid(args[1], device_env)
+        device_env = driver.runtime.get_current_device()
+        gs = _ensure_valid_work_item_grid(args[0], device_env)
         # If the optional local size argument is provided
-        if nargs == 3:
-            ls = _ensure_valid_work_group_size(args[2], gs)
+        if nargs == 2 and args[1] != []:
+            ls = _ensure_valid_work_group_size(args[1], gs)
 
         return self.configure(device_env, gs, ls)
 
@@ -464,7 +465,7 @@ class DPPyKernel(DPPyKernelBase):
                 dArr = device_env.copy_array_to_device(val)
             elif self.valid_access_types[access_type] == _NUMBA_PVC_WRITE_ONLY:
                 # write_only case, we do not copy the host data
-                dArr = driver.DeviceArray(device_env.get_env_ptr(), val)
+                dArr = device_env.create_device_array(val)
 
             assert (dArr != None), "Problem in allocating device buffer"
             device_arrs[-1] = dArr

@@ -18,6 +18,8 @@ from .ocl.stubs import (
     CLK_GLOBAL_MEM_FENCE,
 )
 
+DEFAULT_LOCAL_SIZE = []
+
 from . import initialize
 
 from .decorators import kernel, func, autojit

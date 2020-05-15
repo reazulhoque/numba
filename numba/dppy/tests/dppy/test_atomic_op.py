@@ -6,7 +6,7 @@ import numba
 from numba import dppy
 from numba.dppy.testing import unittest
 from numba.dppy.testing import DPPYTestCase
-import dppy.core as ocldrv
+import dppy as ocldrv
 
 
 def atomic_add(ary):
@@ -43,14 +43,8 @@ def atomic_add3(ary):
 
 
 
+@unittest.skipUnless(ocldrv.has_gpu_device, 'test only on GPU system')
 class TestAtomicOp(DPPYTestCase):
-    gpu_device_env = None
-
-    try:
-        gpu_device_env = ocldrv.runtime.get_gpu_device()
-    except:
-        print("GPU device not found")
-
     def test_atomic_add(self):
         @dppy.kernel
         def atomic_add(B):
@@ -60,7 +54,8 @@ class TestAtomicOp(DPPYTestCase):
         N = 100
         B = np.array([0])
 
-        atomic_add[self.gpu_device_env, N](B)
+        with ocldrv.igpu_context(0) as device_env:
+            atomic_add[N, dppy.DEFAULT_LOCAL_SIZE](B)
 
         self.assertTrue(B[0] == N)
 
@@ -74,7 +69,8 @@ class TestAtomicOp(DPPYTestCase):
         N = 100
         B = np.array([100])
 
-        atomic_sub[self.gpu_device_env, N](B)
+        with ocldrv.igpu_context(0) as device_env:
+            atomic_sub[N, dppy.DEFAULT_LOCAL_SIZE](B)
 
         self.assertTrue(B[0] == 0)
 
@@ -82,7 +78,8 @@ class TestAtomicOp(DPPYTestCase):
         ary = np.random.randint(0, 32, size=32).astype(np.uint32)
         orig = ary.copy()
         dppy_atomic_add = dppy.kernel('void(uint32[:])')(atomic_add)
-        dppy_atomic_add[self.gpu_device_env, 32](ary)
+        with ocldrv.igpu_context(0) as device_env:
+            dppy_atomic_add[32, dppy.DEFAULT_LOCAL_SIZE](ary)
 
         gold = np.zeros(32, dtype=np.uint32)
         for i in range(orig.size):
@@ -94,14 +91,16 @@ class TestAtomicOp(DPPYTestCase):
         ary = np.random.randint(0, 32, size=32).astype(np.uint32).reshape(4, 8)
         orig = ary.copy()
         dppy_atomic_add2 = dppy.kernel('void(uint32[:,:])')(atomic_add2)
-        dppy_atomic_add2[self.gpu_device_env, (4, 8)](ary)
+        with ocldrv.igpu_context(0) as device_env:
+            dppy_atomic_add2[(4, 8), dppy.DEFAULT_LOCAL_SIZE](ary)
         self.assertTrue(np.all(ary == orig + 1))
 
     def test_atomic_add3(self):
         ary = np.random.randint(0, 32, size=32).astype(np.uint32).reshape(4, 8)
         orig = ary.copy()
         dppy_atomic_add3 = dppy.kernel('void(uint32[:,:])')(atomic_add3)
-        dppy_atomic_add3[self.gpu_device_env, (4, 8)](ary)
+        with ocldrv.igpu_context(0) as device_env:
+            dppy_atomic_add3[(4, 8), dppy.DEFAULT_LOCAL_SIZE](ary)
 
         self.assertTrue(np.all(ary == orig + 1))
 

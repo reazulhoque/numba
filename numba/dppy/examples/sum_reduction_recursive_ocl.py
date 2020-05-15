@@ -3,10 +3,9 @@ import numpy as np
 from numba import dppy, int32
 import math
 
-import dppy.core as ocldrv
+import dppy as ocldrv
 
 
-work_group_size = 64
 def recursive_reduction(size, group_size,
                         Dinp, Dpartial_sums, device_env):
 
@@ -53,10 +52,10 @@ def recursive_reduction(size, group_size,
             nb_work_groups += 1
             passed_size = nb_work_groups * group_size
 
-    sum_reduction_kernel[device_env, passed_size, group_size](Dinp, size, Dpartial_sums)
+    sum_reduction_kernel[passed_size, group_size](Dinp, size, Dpartial_sums)
 
     if nb_work_groups <= group_size:
-        sum_reduction_kernel[device_env, group_size, group_size](Dpartial_sums, nb_work_groups, Dinp)
+        sum_reduction_kernel[group_size, group_size](Dpartial_sums, nb_work_groups, Dinp)
         device_env.copy_array_from_device(Dinp)
         result = Dinp._ndarray[0]
     else:
@@ -68,6 +67,7 @@ def recursive_reduction(size, group_size,
 
 def sum_reduction_recursive():
     global_size = 20000
+    work_group_size = 64
     nb_work_groups = global_size // work_group_size
     if (global_size % work_group_size) != 0:
         nb_work_groups += 1
@@ -75,23 +75,21 @@ def sum_reduction_recursive():
     inp = np.ones(global_size).astype(np.int32)
     partial_sums = np.zeros(nb_work_groups).astype(np.int32)
 
-    device_env = None
-    try:
-        device_env = ocldrv.runtime.get_gpu_device()
-        print("Selected GPU device")
-    except:
+
+    if ocldrv.has_gpu_device:
+        with ocldrv.igpu_context(0) as device_env:
+            Dinp = device_env.copy_array_to_device(inp)
+            Dpartial_sums = device_env.copy_array_to_device(partial_sums)
+
+            print("Running recursive reduction")
+            result = recursive_reduction(global_size, work_group_size,
+                                         Dinp, Dpartial_sums, device_env)
+    else:
+        print("No device found")
         exit()
 
 
-    Dinp = device_env.copy_array_to_device(inp)
-    Dpartial_sums = device_env.copy_array_to_device(partial_sums)
-
-    print("Running recursive reduction")
-    result = recursive_reduction(global_size, work_group_size,
-                                 Dinp, Dpartial_sums, device_env)
-
-
-    print("Expected:", global_size, "Result:", result)
+    print("Expected:", global_size, "--- GOT:", result)
     assert(result == global_size)
 
 

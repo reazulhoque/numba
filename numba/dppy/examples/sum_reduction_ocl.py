@@ -3,7 +3,8 @@ import numpy as np
 from numba import dppy, int32
 import math
 
-import dppy.core as ocldrv
+import dppy as ocldrv
+
 
 def sum_reduction_device_plus_host():
     @dppy.kernel
@@ -41,15 +42,13 @@ def sum_reduction_device_plus_host():
     inp = np.ones(global_size).astype(np.int32)
     partial_sums = np.zeros(nb_work_groups).astype(np.int32)
 
-    device_env = None
-    try:
-        device_env = ocldrv.runtime.get_gpu_device()
-        print("Selected GPU device")
-    except:
+    if ocldrv.has_gpu_device:
+        with ocldrv.igpu_context(0) as device_env:
+            print("Running Device + Host reduction")
+            sum_reduction_kernel[global_size, work_group_size](inp, partial_sums)
+    else:
+        print("No device found")
         exit()
-
-    print("Running Device + Host reduction")
-    sum_reduction_kernel[device_env, global_size, work_group_size](inp, partial_sums)
 
     final_sum = 0
     # calculate the final sum in HOST
@@ -57,7 +56,7 @@ def sum_reduction_device_plus_host():
         final_sum += partial_sums[i]
 
     assert(final_sum == global_size)
-    print("Expected:", global_size, "Result:", final_sum)
+    print("Expected:", global_size, "--- GOT:", final_sum)
 
 
 if __name__ == '__main__':
