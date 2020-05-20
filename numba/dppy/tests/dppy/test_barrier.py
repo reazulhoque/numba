@@ -14,7 +14,7 @@ class TestBarrier(unittest.TestCase):
         def twice(A):
             i = dppy.get_global_id(0)
             d = A[i]
-            #dppy.barrier(dppy.CLK_LOCAL_MEM_FENCE)  # local mem fence
+            dppy.barrier(dppy.CLK_LOCAL_MEM_FENCE)  # local mem fence
             A[i] = d * 2
 
         N = 256
