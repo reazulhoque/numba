@@ -37,7 +37,10 @@ class DPPLHostFunctionCallsGenerator(object):
         self.num_inputs        = num_inputs
 
         # list of buffer that needs to comeback to host
-        self.read_bufs_after_enqueue = []
+        self.write_buffs = []
+
+        # list of buffer that does not need to comeback to host
+        self.read_only_buffs = []
 
 
     def _create_null_ptr(self):
@@ -88,6 +91,12 @@ class DPPLHostFunctionCallsGenerator(object):
         self.create_dppl_rw_mem_buffer = self.builder.module.get_or_insert_function(
                                           create_dppl_rw_mem_buffer_fnty,
                                           name="create_dp_rw_mem_buffer")
+
+        destroy_dppl_rw_mem_buffer_fnty = lc.Type.function(
+            self.intp_t, [self.void_ptr_ptr_t])
+        self.destroy_dppl_rw_mem_buffer = self.builder.module.get_or_insert_function(
+                                          destroy_dppl_rw_mem_buffer_fnty,
+                                          name="destroy_dp_rw_mem_buffer")
 
         write_mem_buffer_to_device_fnty = lc.Type.function(
             self.intp_t, [self.void_ptr_t, self.void_ptr_t, self.intp_t, self.intp_t, self.intp_t, self.void_ptr_t])
@@ -183,7 +192,10 @@ class DPPLHostFunctionCallsGenerator(object):
             legal_names = legalize_names([var])
 
             if legal_names[var] in modified_arrays:
-                self.read_bufs_after_enqueue.append((buffer_ptr, total_size, data_member))
+                self.write_buffs.append((buffer_ptr, total_size, data_member))
+            else:
+                self.read_only_buffs.append((buffer_ptr, total_size, data_member))
+
 
             # We really need to detect when an array needs to be copied over
             if index < self.num_inputs:
@@ -275,8 +287,8 @@ class DPPLHostFunctionCallsGenerator(object):
         self.builder.call(self.enqueue_kernel, args)
 
         # read buffers back to host
-        for read_buf in self.read_bufs_after_enqueue:
-            buffer_ptr, array_size_member, data_member = read_buf
+        for write_buff in self.write_buffs:
+            buffer_ptr, array_size_member, data_member = write_buff
             args = [self.builder.inttoptr(self.current_device_int_const, self.void_ptr_t),
                     self.builder.load(buffer_ptr),
                     self.one,
@@ -284,3 +296,12 @@ class DPPLHostFunctionCallsGenerator(object):
                     self.builder.load(array_size_member),
                     self.builder.bitcast(self.builder.load(data_member), self.void_ptr_t)]
             self.builder.call(self.read_mem_buffer_from_device, args)
+            # env, buffer_size, buffer_ptr
+            args = [buffer_ptr]
+            self.builder.call(self.destroy_dppl_rw_mem_buffer, args)
+
+        for read_buff in self.read_only_buffs:
+            buffer_ptr, array_size_member, data_member = read_buff
+            args = [buffer_ptr]
+            self.builder.call(self.destroy_dppl_rw_mem_buffer, args)
+
