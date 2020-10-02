@@ -1,10 +1,12 @@
 from numba.core import dispatcher, compiler
-from numba.core.registry import cpu_target, dispatcher_registry
+#from numba.core.registry import cpu_target, dispatcher_registry
+from numba.core.registry import dispatcher_registry
+from numba.dppl.descriptor import dppl_cpu_target
 import numba.dppl_config as dppl_config
 
 
 class DpplOffloadDispatcher(dispatcher.Dispatcher):
-    targetdescr = cpu_target
+    targetdescr = dppl_cpu_target
 
     def __init__(self, py_func, locals={}, targetoptions={}, impl_kind='direct', pipeline_class=compiler.Compiler):
         if dppl_config.dppl_present:

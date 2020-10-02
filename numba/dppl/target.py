@@ -88,6 +88,15 @@ def _replace_numpy_ufunc_with_opencl_supported_functions():
                 ufunc_db[ufunc][sig] = lower_ocl_impl[(name, sig_mapper[sig])]
 
 
+from numba.core.cpu import CPUContext
+class DPPLCPUTargetContext(CPUContext):
+    context_name = "dppl.cpu.jit"
+
+    def init(self):
+        print("DPPL CPU CONTEXT")
+        pass
+
+
 class DPPLTargetContext(BaseContext):
     implement_powi_as_math_call = True
     generic_addrspace = SPIR_GENERIC_ADDRSPACE
