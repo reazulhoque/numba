@@ -636,7 +636,6 @@ def array_cov(context, builder, sig, args):
 
     sycl_queue = get_sycl_queue(context, builder)
     aty = sig.args[0]
-    aty = sig.args[0]
     a = make_array(aty)(context, builder, args[0])
 
     total_size_a = get_total_size_of_array(context, builder, aty.dtype, a)
@@ -691,11 +690,61 @@ def array_cov(context, builder, sig, args):
     return out
 
 
-'''
 @lower_builtin(np.linalg.eig, types.Array)
-def array_cov(context, builder, sig, args):
-    pass
+def eig_impl(context, builder, sig, args):
+    ensure_dpnp("cov")
 
+    import pdb
+    pdb.set_trace()
+    print("HEY!!!")
+
+    def make_res(A):
+        n = A.shape[-1]
+        res_val = np.empty(n, dtype=A.dtype)
+        res_vec = np.empty(A.shape, dtype=A.dtype)
+        return (res_val, res_vec)
+
+    outs = context.compile_internal(builder, make_res,
+            signature(sig.return_type, *sig.args), args)
+
+    sycl_queue = get_sycl_queue(context, builder)
+    aty = sig.args[0]
+    a = make_array(aty)(context, builder, args[0])
+    m, n = cgutils.unpack_tuple(builder, a.shape)
+
+    total_size_a = get_total_size_of_array(context, builder, aty.dtype, a)
+    a_usm = allocate_usm(context, builder, total_size_a, sycl_queue)
+    copy_usm(context, builder, a.data, a_usm, total_size_a, sycl_queue)
+
+    res_val, res_vec = cgutils.unpack_tuple(builder, outs)
+
+    res_val_ary = make_array(sig.return_type)(context, builder, res_val)
+    total_size_res_val = get_total_size_of_array(context, builder, sig.return_type.dtype, res_val_ary)
+    res_val_usm = allocate_usm(context, builder, total_size_res_val, sycl_queue)
+
+    res_vec_ary = make_array(sig.return_type)(context, builder, res_vec)
+    total_size_res_vec = get_total_size_of_array(context, builder, sig.return_type.dtype, res_vec_ary)
+    res_vec_usm = allocate_usm(context, builder, total_size_res_vec, sycl_queue)
+
+    param_tys = [ll_void_p, ll_void_p, ll_void_p, ir.IntType(64)]
+    params = (a_usm, res_val_usm, res_vec_usm, m)
+
+    type_names = []
+    type_names.append(aty.dtype.name)
+    type_names.append("NONE")
+
+    call_dpnp(context, builder, "dpnp_eig", type_names, params, param_tys, ll_void)
+
+    copy_usm(context, builder, res_val_usm, res_val_ary.data, total_size_res_val, sycl_queue)
+    copy_usm(context, builder, res_vec_usm, res_vec_ary.data, total_size_res_vec, sycl_queue)
+
+    free_usm(context, builder, a_usm, sycl_queue)
+    free_usm(context, builder, res_val_usm, sycl_queue)
+    free_usm(context, builder, res_vec_usm, sycl_queue)
+
+    return outs
+
+'''
 @lower_builtin("np.random.sample")
 def random_impl(context, builder, sig, args):
 

@@ -95,10 +95,24 @@ class DPPLAddNumpyOverloadPass(FunctionPass):
                         retty = types.float64
                     return signature(retty, *args)
 
+            @infer_global(np.linalg.eig)
+            class NPLinalgEig(AbstractTemplate):
+                def generic(self, args, kws):
+                    assert not kws
+                    if args[0].ndim > 2:
+                        return
+
+                    nb_dtype = args[0].dtype
+                    rets = (types.Array(dtype=nb_dtype, ndim=1, layout='C'), types.Array(dtype=nb_dtype, ndim=2, layout='C'))
+                    return_type = types.BaseTuple.from_types(rets)
+                    return signature(return_type, *args)
+
+
 
             prev_cov = None
             prev_median = None
             prev_mean = None
+            prev_eig = None
             for idx, g in enumerate(reg.globals):
                 if g[0] == np.cov:
                     if not prev_cov:
@@ -118,7 +132,14 @@ class DPPLAddNumpyOverloadPass(FunctionPass):
                     else:
                         prev_mean.templates = g[1].templates
 
+                if g[0] == np.linalg.eig:
+                    if not prev_eig:
+                        prev_eig = g[1]
+                    else:
+                        prev_eig.templates = g[1].templates
+
             typingctx.refresh()
+
         return True
 
 @register_pass(mutates_CFG=False, analysis_only=True)
