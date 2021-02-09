@@ -810,7 +810,7 @@ class ControlFlowAnalysis(object):
         self.graph = graph
 
         # Fill incoming
-        for b in utils.itervalues(self.blocks):
+        for b in self.blocks.values():
             for out, pops in b.outgoing_jumps.items():
                 self.blocks[out].incoming_jumps[b.offset] = pops
 
