@@ -320,11 +320,7 @@ RETURN_ARRAY_COPY:
  * Refer to https://github.com/numba/numba/pull/6446
  */
 NUMBA_EXPORT_FUNC(PyObject *)
-<<<<<<< HEAD
-NRT_adapt_ndarray_to_python_acqref(arystruct_t* arystruct, int ndim,
-=======
 NRT_adapt_ndarray_to_python_acqref(arystruct_t* arystruct, PyTypeObject *retty, int ndim,
->>>>>>> release0.52-patched
                             int writeable, PyArray_Descr *descr)
 {
     PyArrayObject *array;
