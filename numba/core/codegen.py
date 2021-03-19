@@ -233,7 +233,7 @@ class _CFG(object):
         nrt_meminfo = re.compile("@NRT_MemInfo")
         ll_intrin_calls = re.compile(r".*call.*@llvm\..*")
         ll_function_call = re.compile(r".*call.*@.*")
-        ll_raise = re.compile(r"ret i32.*\!ret_is_raise.*")
+        ll_raise = re.compile("ret i32.*\!ret_is_raise.*")
         ll_return = re.compile("ret i32 [^1],?.*")
 
         # wrapper function for line wrapping LLVM lines
@@ -663,7 +663,7 @@ class CodeLibrary(object):
         Finalization involves various stages of code optimization and
         linking.
         """
-        require_global_compiler_lock()
+        #require_global_compiler_lock()
 
         # Report any LLVM-related problems to the user
         self._codegen._check_llvm_bugs()
@@ -690,7 +690,7 @@ class CodeLibrary(object):
         self._final_module.verify()
         self._finalize_final_module()
 
-    def _finalize_dyanmic_globals(self):
+    def _finalize_dynamic_globals(self):
         # Scan for dynamic globals
         for gv in self._final_module.global_variables:
             if gv.name.startswith('numba.dynamic.globals'):
@@ -708,7 +708,7 @@ class CodeLibrary(object):
         """
         Make the underlying LLVM module ready to use.
         """
-        self._finalize_dyanmic_globals()
+        self._finalize_dynamic_globals()
         self._verify_declare_only_symbols()
 
         # Remember this on the module, for the object cache hooks

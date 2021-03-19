@@ -11,7 +11,7 @@ from numba.core.errors import TypingError
 from numba.np.numpy_support import numpy_version
 import unittest
 from numba.np import numpy_support
-from numba.tests.support import TestCase
+from numba.tests.support import TestCase, skip_ppc64le_issue6465
 
 _FS = ('e', 'f')
 
@@ -803,8 +803,8 @@ class TestRecordDtype(unittest.TestCase):
         self.assertIn('Array', transformed)
         self.assertNotIn('first', transformed)
         self.assertNotIn('second', transformed)
-        # Length is usually 50 - 5 chars tolerance as above.
-        self.assertLess(len(transformed), 50)
+        # Length is usually 60 - 5 chars tolerance as above.
+        self.assertLess(len(transformed), 60)
 
     def test_record_two_arrays(self):
         """
@@ -917,6 +917,7 @@ class TestRecordDtypeWithStructArraysAndDispatcher(TestRecordDtypeWithStructArra
         return _get_cfunc_nopython(pyfunc, argspec)
 
 
+@skip_ppc64le_issue6465
 class TestRecordDtypeWithCharSeq(unittest.TestCase):
 
     def _createSampleaArray(self):
