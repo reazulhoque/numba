@@ -267,19 +267,8 @@ class BaseLower(object):
             self.context.debug_print(self.builder, "DEBUGJIT: {0}".format(msg))
 
 
-# Dictionary mapping instruction class to its lowering function.
-lower_extensions = {}
-
-
 class Lower(BaseLower):
     GeneratorLower = generators.GeneratorLower
-
-    def __init__(self, context, library, fndesc, func_ir, metadata=None):
-        BaseLower.__init__(self, context, library, fndesc, func_ir, metadata)
-        from numba.parfors.parfor_lowering import _lower_parfor_parallel
-        from numba.parfors import parfor
-        if parfor.Parfor not in lower_extensions:
-            lower_extensions[parfor.Parfor] = [_lower_parfor_parallel]
 
     def pre_block(self, block):
         from numba.core.unsafe import eh
@@ -445,10 +434,11 @@ class Lower(BaseLower):
             self.lower_static_try_raise(inst)
 
         else:
-            for _class, func in lower_extensions.items():
-                if isinstance(inst, _class):
-                    func[-1](self, inst)
-                    return
+            if hasattr(self.context, "lower_extensions"):
+                for _class, func in self.context.lower_extensions.items():
+                    if isinstance(inst, _class):
+                        func(self, inst)
+                        return
             raise NotImplementedError(type(inst))
 
     def lower_setitem(self, target_var, index_var, value_var, signature):
